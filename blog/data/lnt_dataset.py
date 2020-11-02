@@ -39,6 +39,13 @@ class LnTDataset():
         logger.info(f'Calculating financial age of customer')
         self._finance_age()
 
+        logger.info(f'Calculating risk score of customer')
+        self._map_credit_risk()
+
+        logger.info(f'Calculating emplyment status customer')
+        self._map_employment()
+
+
     def _age(self,dur):
         """
         Function to split the string age to
@@ -79,6 +86,50 @@ class LnTDataset():
         self.df['AVERAGE.ACCT.AGE'] = self.df['AVERAGE.ACCT.AGE'].apply(self._string_age)
         self.df['CREDIT.HISTORY.LENGTH'] = self.df['CREDIT.HISTORY.LENGTH'].apply(self._string_age)
 
+    def _map_credit_risk(self):
+        """
+        Process the credit risk information.
+        """
+
+        #Replacing all the values into Common Group
+
+        self.df['PERFORM_CNS.SCORE.DESCRIPTION'].replace({'C-Very Low Risk':'Very Low Risk',
+                                                    'A-Very Low Risk':'Very Low Risk',
+                                                    'D-Very Low Risk':'Very Low Risk',
+                                                    'B-Very Low Risk':'Very Low Risk',
+                                                    'M-Very High Risk':'Very High Risk',
+                                                    'L-Very High Risk':'Very High Risk',
+                                                    'F-Low Risk':'Low Risk',
+                                                    'E-Low Risk':'Low Risk',
+                                                    'G-Low Risk':'Low Risk',
+                                                    'H-Medium Risk':'Medium Risk',
+                                                    'I-Medium Risk':'Medium Risk',
+                                                    'J-High Risk':'High Risk',
+                                                    'K-High Risk':'High Risk'},
+                                                    inplace=True)
+
+        
+        risk_map = {'No Bureau History Available':-1, 
+                    'Not Scored: No Activity seen on the customer (Inactive)':-1,
+                    'Not Scored: Sufficient History Not Available':-1,
+                    'Not Scored: No Updates available in last 36 months':-1,
+                    'Not Scored: Only a Guarantor':-1,
+                    'Not Scored: More than 50 active Accounts found':-1,
+                    'Not Scored: Not Enough Info available on the customer':-1,
+                    'Very Low Risk':4,
+                    'Low Risk':3,
+                    'Medium Risk':2, 
+                    'High Risk':1,
+                    'Very High Risk':0}
+
+        self.df['PERFORM_CNS.SCORE.DESCRIPTION'] = self.df['PERFORM_CNS.SCORE.DESCRIPTION'].map(risk_map)                                            
+
+    def _map_employment(self):
+        """
+        Map employment status to numbers.
+        """
+        employment_map = {'Self employed':0, 'Salaried':1, 'Not_employed':-1}
+        self.df['Employment.Type'] = self.df['Employment.Type'].apply(lambda x: employment_map[x])
 
     def get_data(self,path,dropna=True):
         """
@@ -88,16 +139,20 @@ class LnTDataset():
         self.path = path
         #Read the data.    
         self._read_data()
-        #Process he data.
-        self._process_data()
-
+        #Drop Na   
+     
         if dropna:
             logger.info(f'Dropping na rows.')
             self.df.dropna(inplace=True)
+        else :
+            ##TODO :Ways of handling Na values.
+            pass
+
+        #Process the data.
+        self._process_data()
     
         y = self.df[self.target_column]
         X = self.df.drop([self.target_column],axis=1)
-
         logger.info(f'Shape of training data X :{ X.shape}, y : {y.shape}.')
         return X,y
 
