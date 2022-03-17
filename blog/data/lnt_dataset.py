@@ -2,7 +2,7 @@
 
 import pandas as pd 
 from loguru import logger
-
+from sklearn.model_selection import train_test_split
 class LnTDataset():
 
     def __init__(self):
@@ -131,7 +131,7 @@ class LnTDataset():
         employment_map = {'Self employed':0, 'Salaried':1, 'Not_employed':-1}
         self.df['Employment.Type'] = self.df['Employment.Type'].apply(lambda x: employment_map[x])
 
-    def get_data(self,path,dropna=True):
+    def get_data(self,path,dropna=True,sample=-1):
         """
         Returns the processed X, y.
         This dataset can then be used directly.
@@ -153,8 +153,16 @@ class LnTDataset():
     
         y = self.df[self.target_column]
         X = self.df.drop([self.target_column],axis=1)
-        logger.info(f'Shape of training data X :{ X.shape}, y : {y.shape}.')
-        return X,y
+        
+        if sample > 0 :
+            trainx,testx,trainy,testy = train_test_split(X,y,train_size=sample,
+                                                        stratify=y)
+            logger.info(f'Shape of training data X :{ trainx.shape}, y : {trainy.shape}.')
+            return trainx,trainy
+        else :
+        
+            logger.info(f'Shape of training data X :{ X.shape}, y : {y.shape}.')
+            return X,y
 
 
 
