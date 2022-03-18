@@ -1,6 +1,6 @@
-#Fcatory class to clean the dataset.
-# Follows the factory pattern.
+#Factory class to clean the dataset follows the factory pattern.
 from blog.data.lnt_dataset import LnTDataset
+
 class DataCleanerFactory():
     
     def __init__(self):
