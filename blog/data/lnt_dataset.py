@@ -131,7 +131,7 @@ class LnTDataset():
         employment_map = {'Self employed':0, 'Salaried':1, 'Not_employed':-1}
         self.df['Employment.Type'] = self.df['Employment.Type'].apply(lambda x: employment_map[x])
 
-    def get_data(self,path,dropna=True,sample=-1):
+    def get_data(self,path,dropna=False,sample=-1):
         """
         Returns the processed X, y.
         This dataset can then be used directly.
