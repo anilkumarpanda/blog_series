@@ -1,11 +1,10 @@
 # Blog Series
-Code accompanying my blog post series.
+Code accompanying my [blog posts](https://anilkumarpanda.github.io/).
 
-In this series, I will explore 
-* intersection between ML models,Pricing and Optimisation.
-* different pyhton packages/book/resource that I find intresting.
+These blog posts will cover :
+
+1. Various practical aspects of Machine Learning.
+2. Comparision and testing of ML packages.
+3. Learnings
 
 
-The follwing are sme of the topics I will explaore:
-1) ML model hyper parameter tuning.
-2) Pricing and optimisation both Quadratic Programming and MultiObjctive Optimisation.
