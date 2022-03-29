@@ -46,7 +46,6 @@ def select_features(data, n_features,verbose=1):
     # Select the best features based on validation score.
     if n_features is None:
         selected_feats = report[['features_set']].head(1).values[0]
-        
     else :
         selected_feats = shap_elimination.get_reduced_features_set(num_features=n_features)
     logger.info(f"Selected features : {selected_feats} ")

@@ -28,6 +28,7 @@ logger.info(f"Test shape : {X_test.shape},{y_test.shape} ")
 
 data_dict = {'xtrain': X_train, 'ytrain': y_train,'xtest' : X_test, 'ytest' : y_test}
 logger.info("Selecting features")
+
 # Select the best features based on SHAPRFE CV
 # selected_features,fs_plot = select_features(data=data_dict,n_features=11,verbose=1)
 
@@ -40,12 +41,12 @@ selected_features = ['PercentTradesWBalance', 'PercentInstallTrades', 'ExternalR
 data_dict['xtrain'] = data_dict['xtrain'][selected_features]
 data_dict['xtest'] = data_dict['xtest'][selected_features]
 
-# Tune model parameters with Optuna.
-# Once the parameters are tuned, the model is trained and the results are evaluated.
-# We need not run this again.
+# # Tune model parameters with Optuna.
+# # Once the parameters are tuned, the model is trained and the results are evaluated.
+# # We need not run this again.
 
 # study = optuna.create_study(study_name='auc_objective',direction="maximize")
-# study.optimize(ROCAUCObjective(X_train,y_train), n_trials=20, timeout=300)
+# study.optimize(ROCAUCObjective(data_dict['xtrain'],data_dict['ytrain']), n_trials=15, timeout=300)
 # print("Number of finished trials: {}".format(len(study.trials)))
 # print("Best trial:")
 # trial = study.best_trial
@@ -55,10 +56,10 @@ data_dict['xtest'] = data_dict['xtest'][selected_features]
 #     print("    {}: {}".format(key, value))
 
 model_params = {
-    'n_estimators': 50,
-    'learning_rate': 0.10,
-    'num_leaves': 10,
-    'feature_fraction': 0.68
+    'n_estimators': 250,
+    'learning_rate': 0.2480,
+    'num_leaves': 3,
+    'feature_fraction': 0.75
 }
 
 # # # We can do further analysis on top 5 features.
@@ -86,7 +87,29 @@ for feature in top_5_features:
 # Train a LGB model with monotonicity constraints.
 
 logger.info("Training monotonic model")
-model_params['monotone_constraints']=get_monotone_constraints(data_dict=data_dict,target=target)
+monotonic_constraints=get_monotone_constraints(data_dict=data_dict,target=target)
+
+# Tune model parameters with Optuna.
+# Once the parameters are tuned, the model is trained and the results are evaluated.
+# We need not run this again.
+
+# study = optuna.create_study(study_name='auc_objective',direction="maximize")
+# study.optimize(ROCAUCObjective(data_dict['xtrain'],data_dict['ytrain'],monotonic_constraints),n_trials=15, timeout=300)
+# print("Number of finished trials: {}".format(len(study.trials)))
+# print("Best trial:")
+# trial = study.best_trial
+# print("  Value: {}".format(trial.value))
+# print("  Params: ")
+# for key, value in trial.params.items():
+#     print("    {}: {}".format(key, value))
+
+model_params = {
+    'n_estimators': 110,
+    'learning_rate': 0.1964,
+    'num_leaves': 176,
+    'feature_fraction': 0.43,
+    'monotone_constraints': monotonic_constraints
+}
 logger.info(f"Creating model with params : {model_params}")
 mono_lgb = lgb.LGBMClassifier(**model_params)
 mono_model = show_model_results(data=data_dict,model=mono_lgb,calc_threshold=False)
