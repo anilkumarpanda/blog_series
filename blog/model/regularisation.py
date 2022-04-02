@@ -9,12 +9,14 @@ from xgboost import XGBClassifier
 from probatus.feature_elimination import EarlyStoppingShapRFECV
 from yellowbrick.classifier import DiscriminationThreshold
 import matplotlib
+
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from loguru import logger
 import lightgbm as lgb
+
 
 def select_features(data, n_features, verbose=1):
     """
@@ -46,7 +48,9 @@ def select_features(data, n_features, verbose=1):
     report = shap_elimination.fit_compute(data["xtrain"], data["ytrain"])
     # Select the best features based on validation score.
     if n_features is None:
-        selected_feats = report[["features_set"]].sort_values(by='val_metric_mean', ascending=False)
+        selected_feats = report[["features_set"]].sort_values(
+            by="val_metric_mean", ascending=False
+        )
     else:
         selected_feats = shap_elimination.get_reduced_features_set(
             num_features=n_features

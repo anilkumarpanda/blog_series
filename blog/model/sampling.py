@@ -3,7 +3,8 @@ from loguru import logger as logging
 import pandas as pd
 import numpy as np
 
-def oot_split(df, split_date,split_col,target_col):
+
+def oot_split(df, split_date, split_col, target_col):
     """Splits dataset into in-time and out-of-time samples.
 
     Args:
@@ -19,23 +20,22 @@ def oot_split(df, split_date,split_col,target_col):
         df_oot (pd.DataFrame): out-of-time data sample
     """
     split_date = pd.Timestamp(split_date)
-    
+
     df_it = df[(df[split_col] < split_date)].copy()
     df_oot = df[(df[split_col] >= split_date)].copy()
-    
+
     oot_pct = round(df_oot.shape[0] / (df_oot.shape[0] + df_it.shape[0]) * 100, 1)
     it_pct = round(df_it.shape[0] / (df_oot.shape[0] + df_it.shape[0]) * 100, 1)
 
     defaults_it = df_it[df_it[target_col] == 1].shape[0]
     defaults_oot = df_oot[df_oot[target_col] == 1].shape[0]
-    
+
     target = target_col
 
     X_it = df_it.copy()
     y_it = df_it[target]
     X_oot = df_oot.copy()
     y_oot = df_oot[target]
-    
 
     it_stat_dict = {
         "name": "IT",
@@ -63,7 +63,6 @@ def oot_split(df, split_date,split_col,target_col):
     logging.info(f"IT data info \n : {it_stat_dict}")
     logging.info(f"OOT data info \n : {oot_stat_dict}")
 
-    
     logging.info(
         f"OOT sample contains {defaults_oot} defaults, "
         f"{round(defaults_oot / (defaults_it + defaults_oot) * 100, 1)}% of total defaults "
@@ -71,7 +70,7 @@ def oot_split(df, split_date,split_col,target_col):
     )
 
     # Drop the split column.
-    X_it.drop(columns=[split_col,target_col], axis=1, inplace=True)
-    X_oot.drop(columns=[split_col,target_col], axis=1, inplace=True)
-    
+    X_it.drop(columns=[split_col, target_col], axis=1, inplace=True)
+    X_oot.drop(columns=[split_col, target_col], axis=1, inplace=True)
+
     return X_it, y_it, X_oot, y_oot

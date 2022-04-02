@@ -32,7 +32,9 @@ class MultiObjective(object):
             clf, self.X, self.y, cv=3, scoring="average_precision"
         )
 
-        return np.round(roc_auc_scores.mean(), 5), np.round(average_precision_scores.mean(), 5)
+        return np.round(roc_auc_scores.mean(), 5), np.round(
+            average_precision_scores.mean(), 5
+        )
 
 
 class ROCAUCObjective(object):
