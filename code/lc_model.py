@@ -48,11 +48,12 @@ data_dict = get_simple_feature_transformation(data_dict)
 # =================== Feature Selection =========================================
 logger.info(f"3.Starting feature selection.")
 #Select the best features based on SHAPRFE CV
-# selected_features,fs_plot = select_features(data=data_dict,n_features=16,verbose=100)
-selected_features = ['emp_length', 'loan_amnt', 'title', 
-                   'tot_cur_bal', 'emp_title', 'term', 'home_ownership', 
-                   'sub_grade', 'addr_state', 'mort_acc']
+#selected_features,fs_plot = select_features(data=data_dict,n_features=16,verbose=100)
 
+selected_features = ['emp_length', 'addr_state', 'revol_util', 'revol_bal', 
+                    'term', 'num_actv_bc_tl', 'title', 'total_acc',
+                    'application_type', 'purpose', 'sub_grade']
+logger.info(f"Final features :  {selected_features}")
 #Update the data dictionary with the selected features.
 data_dict['xtrain'] = data_dict['xtrain'][selected_features]
 data_dict['xtest'] = data_dict['xtest'][selected_features]
@@ -69,31 +70,38 @@ print("  Params: ")
 for key, value in trial.params.items():
     print("    {}: {}".format(key, value))
 
-# model_params = {'n_estimators': 40, 
-#                 'learning_rate': 0.04, 
-#                 'num_leaves': 10, 
-#                 'feature_fraction': 0.8,
-#                }
+#model_params = trial.params
+model_params= {'n_estimators': 360, 'learning_rate': 0.06, 'num_leaves': 26, 'feature_fraction': 0.9}
 
-logger.info(f"Creating model with params : {trial.params}")
-mono_lgb = lgb.LGBMClassifier(**trial.params)
+# =================== Train Model =========================================
+logger.info(f"5.Train Model ")
+logger.info(f"Creating model with params : {model_params}")
+mono_lgb = lgb.LGBMClassifier(**model_params)
 mono_model = show_model_results(data=data_dict,model=mono_lgb,calc_threshold=False)
+
+# ===================Interpret Model =========================================
+logger.info(f"6.Interpret Model")
 
 # Train ShapModelInterpreter
 shap_interpreter = ShapModelInterpreter(mono_model)
 feature_importance = shap_interpreter.fit_compute(data_dict['xtrain'],data_dict['xtest'],data_dict['ytrain'],data_dict['ytest'])
 
 fig = plt.figure()
-ax1 = shap_interpreter.plot('importance')
+ax1 = shap_interpreter.plot('importance',show=False)
 fig.suptitle('Feature Importance Plot', fontsize=12)
 fig.savefig(f'figures/{dataset_name}_feature_importance.png')
+plt.close(fig)
 
-ax2 = shap_interpreter.plot('summary')
+fig = plt.figure()
+ax2 = shap_interpreter.plot('summary',show=False)
 fig.suptitle('Feature Summary Plot', fontsize=12)
 fig.savefig(f'figures/{dataset_name}_feature_summary.png')
+plt.close(fig)
     
 # Save the plots for comparision
 for feature in selected_features:
+    fig = plt.figure()
     ax3 = shap_interpreter.plot('dependence', target_columns=[feature],show=False)
     fig.suptitle(f'Dependence Plot : {feature}', fontsize=12)
     fig.savefig(f'figures/{dataset_name}_shap_dependence_mono_{feature}.png')
+    plt.close(fig)
