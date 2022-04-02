@@ -5,7 +5,7 @@ Python class to read and process the Lending Club dataset.
 import pandas as pd
 from loguru import logger
 from sklearn.model_selection import train_test_split
-
+from blog.utils.df_utils import split_cols_by_type
 
 class LendingClubDataset:
     def __init__(self) -> None:
@@ -34,12 +34,10 @@ class LendingClubDataset:
         # Clean data. 
         # Remove verh high vlaues for annual income and current balance
         self.df = self.df[self.df['annual_inc'] <= 250000]
-        
         self.df = self.df[self.df['tot_cur_bal'] < 1000001]
+        
         # Create features related of the FICO scores.
-        
         self.df = self.df[self.df['pub_rec'] < 3]
-        
         self.df["fico_diff"] = self.df['fico_range_high'] - self.df['fico_range_low']
         self.df["fico_mean"] = (self.df['fico_range_high'] + self.df['fico_range_low']) / 2
         
@@ -65,11 +63,9 @@ class LendingClubDataset:
         #We want to predict if a particular loan was fully paid or charged off 
         # (if it was paid or the customer was not able to pay back the loan amount)
         # We will drop rows which have loan_status other than Fully Paid and Charged Off
-        
-        self.df = self.df[(self.df['loan_status'] == 'Fully Paid') | (self.df['loan_status'] == 'Charged Off')]
         # Map the target data.
-        logger.info("Mapping target variable to binary values.")
-        
+        logger.info("Creating target data.")
+        self.df = self.df[(self.df['loan_status'] == 'Fully Paid') | (self.df['loan_status'] == 'Charged Off')]
         self.df["loan_status"] = self.df["loan_status"].map(
             {
                 "Fully Paid": 0,
@@ -92,6 +88,13 @@ class LendingClubDataset:
         y = self.df[self.target_column]
         X = self.df.drop([self.target_column], axis=1)
 
+        # Convert string columns to categorical.
+        cat_cols,num_cols = split_cols_by_type(X)
+    
+        for col in cat_cols:
+            X[col] = X[col].fillna('missing')
+            X[col] = X[col].astype('category')
+    
         if sample > 0:
             trainx, testx, trainy, testy = train_test_split(
                 X, y, train_size=sample, stratify=y
