@@ -21,7 +21,7 @@ class LendingClubDataset:
         """
         try:
             logger.info(f"Reading data from path {self.path}")
-            self.df = pd.read_csv(self.path, sep=",", usecols=self.use_cols)
+            self.df = pd.read_csv(self.path, sep=",", usecols=self.use_cols,parse_dates=['issue_d'])
             logger.info(f"Read data with shape {self.df.shape}")
         except:
             logger.debug(f"Error in reading dataset. Check path or reading.")
@@ -31,20 +31,49 @@ class LendingClubDataset:
         Process and clean data.
         """
 
+        # Clean data. 
+        # Remove verh high vlaues for annual income and current balance
+        self.df = self.df[self.df['annual_inc'] <= 250000]
+        
+        self.df = self.df[self.df['tot_cur_bal'] < 1000001]
+        # Create features related of the FICO scores.
+        
+        self.df = self.df[self.df['pub_rec'] < 3]
+        
+        self.df["fico_diff"] = self.df['fico_range_high'] - self.df['fico_range_low']
+        self.df["fico_mean"] = (self.df['fico_range_high'] + self.df['fico_range_low']) / 2
+        
+        self.df = self.df.drop(['fico_range_high', 'fico_range_low'], axis=1)
+        # Map employment length to number of years.
+        
+        self.df['emp_length'] = self.df['emp_length'].map(
+            {
+                '< 1 year':0, 
+                '1 year':1,
+                '2 years':2,
+                '3 years':3,
+                '4 years':4 ,
+                '5 years':5 ,
+                '6 years':6, 
+                '7 years':7,
+                '8 years':8,
+                '9 years':9, 
+                '10+ years':10
+            }
+        )
+        
+        #We want to predict if a particular loan was fully paid or charged off 
+        # (if it was paid or the customer was not able to pay back the loan amount)
+        # We will drop rows which have loan_status other than Fully Paid and Charged Off
+        
+        self.df = self.df[(self.df['loan_status'] == 'Fully Paid') | (self.df['loan_status'] == 'Charged Off')]
         # Map the target data.
-
         logger.info("Mapping target variable to binary values.")
+        
         self.df["loan_status"] = self.df["loan_status"].map(
             {
                 "Fully Paid": 0,
-                "Current": 0,
                 "Charged Off": 1,
-                "Late (31-120 days)": 1,
-                "In Grace Period": 0,
-                "Late (16-30 days)": 0,
-                "Does not meet the credit policy. Status:Fully Paid": 0,
-                "Does not meet the credit policy. Status:Charged Off": 1,
-                "Default": 1,
             }
         )
 

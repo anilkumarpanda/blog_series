@@ -9,13 +9,12 @@ from xgboost import XGBClassifier
 from probatus.feature_elimination import EarlyStoppingShapRFECV
 from yellowbrick.classifier import DiscriminationThreshold
 import matplotlib
-
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from loguru import logger
-
+import lightgbm as lgb
 
 def select_features(data, n_features, verbose=1):
     """
@@ -26,9 +25,7 @@ def select_features(data, n_features, verbose=1):
     """
     # Simple feature selection strategy to ensure that the features used in the model are good.
 
-    clf = XGBClassifier(
-        max_depth=3, use_label_encoder=False, objective="binary:logistic"
-    )
+    clf = lgb.LGBMClassifier(max_depth=5)
     fs_param_grid = {
         "n_estimators": [5, 7, 10, 15],
         "num_leaves": [3, 5, 7, 10],
@@ -42,14 +39,14 @@ def select_features(data, n_features, verbose=1):
         cv=3,
         scoring="roc_auc",
         early_stopping_rounds=5,
-        n_jobs=4,
+        n_jobs=6,
         verbose=verbose,
     )
 
     report = shap_elimination.fit_compute(data["xtrain"], data["ytrain"])
     # Select the best features based on validation score.
     if n_features is None:
-        selected_feats = report[["features_set"]].head(1).values[0]
+        selected_feats = report[["features_set"]].sort_values(by='val_metric_mean', ascending=False)
     else:
         selected_feats = shap_elimination.get_reduced_features_set(
             num_features=n_features
