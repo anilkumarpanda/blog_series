@@ -1,0 +1,2 @@
+probatus==1.8.8
+yellowbrick==0.8.0

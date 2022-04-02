@@ -5,7 +5,8 @@ from yellowbrick.classifier import DiscriminationThreshold
 from sklearn.metrics import roc_auc_score, average_precision_score
 import numpy as np
 
-def show_model_results(data, model,calc_threshold=False):
+
+def show_model_results(data, model, calc_threshold=False):
     """
     Show the model results.
     Args :
@@ -31,7 +32,9 @@ def show_model_results(data, model,calc_threshold=False):
     # The outputs are probabilites, however we would like to work with predictions.
     # Hence, lets convert the probas to predictions.
     if calc_threshold:
-        visualizer = DiscriminationThreshold(model, quantiles=np.array([0.25, 0.5, 0.75]),exclude=['queue_rate'])
+        visualizer = DiscriminationThreshold(
+            model, quantiles=np.array([0.25, 0.5, 0.75]), exclude=["queue_rate"]
+        )
         visualizer.fit(data["xtrain"], data["ytrain"])
         visualizer.show()
 
