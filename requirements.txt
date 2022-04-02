@@ -1,2 +1,4 @@
 probatus==1.8.8
 yellowbrick==0.8.0
+lightgbm==3.3.0
+optuna==2.7.0
