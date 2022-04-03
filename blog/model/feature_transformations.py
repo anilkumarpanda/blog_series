@@ -50,17 +50,14 @@ def get_simple_feature_transformation(data_dict):
         ]
     )
 
-    columns = data_dict["xtrain"].columns
-    print("Length of columns: ", len(columns))
-
+    
+    columns =[*num_cols, *cat_cols]
+    
     logger.info(f"Transforming data...")
     data_dict["xtrain"] = preprocessor.fit_transform(
         data_dict["xtrain"], data_dict["ytrain"]
     )
     data_dict["xtest"] = preprocessor.transform(data_dict["xtest"])
-
-    print("Shape of transformed train data: ", data_dict["xtrain"].shape)
-    print("Shape of transformed test data: ", data_dict["xtest"].shape)
 
     logger.info("Converting to Pandas dataframes...")
     data_dict["xtrain"] = pd.DataFrame(data_dict["xtrain"], columns=columns)
