@@ -56,7 +56,6 @@ class ROCAUCObjective(object):
             logger.info("Monotone constraints")
             param_grid = {
                 "n_estimators": trial.suggest_int("n_estimators", 10, 500, step=10),
-                "learning_rate": trial.suggest_uniform("learning_rate", 0.01, 0.3),
                 "num_leaves": trial.suggest_int("num_leaves", 2, 256),
                 "feature_fraction": trial.suggest_float("feature_fraction", 0.4, 1.0),
                 "monotone_constraints": self.monotone_constraints,
@@ -65,14 +64,13 @@ class ROCAUCObjective(object):
             logger.info("No monotone constraints")
             param_grid = {
                 "n_estimators": trial.suggest_int("n_estimators", 10, 500, step=10),
-                "learning_rate": trial.suggest_uniform("learning_rate", 0.01, 0.3),
                 "num_leaves": trial.suggest_int("num_leaves", 2, 256),
                 "feature_fraction": trial.suggest_float("feature_fraction", 0.4, 1.0),
             }
         clf = lgb.LGBMClassifier(objective="binary", verbosity=-1, **param_grid)
         roc_auc_scores = cross_val_score(clf, self.X, self.y, cv=5, scoring="roc_auc")
 
-        objective_value = np.round(roc_auc_scores.mean(), 5)
+        objective_value = roc_auc_scores.mean()
 
         """
         # Return the objective value.
