@@ -53,7 +53,7 @@ initial_features = [
 # ================== Read and clean the dataset.===========================================
 logger.info(f"1.Read data")
 lcd = LendingClubDataset()
-X, y = lcd.get_data(path=path, use_cols=initial_features, dropna=False, sample=-1)
+X, y = lcd.get_data(path=path, use_cols=initial_features, dropna=True, sample=-1)
 logger.info(f"\nTarget distribution:\n{y.value_counts(normalize=True)}")
 
 # Split data into IT & OOT datasets.
@@ -92,7 +92,7 @@ data_dict["xtrain"] = data_dict["xtrain"][selected_features]
 data_dict["xtest"] = data_dict["xtest"][selected_features]
 
 # =================== Tune Hyper parameters =========================================
-logger.info(f"4.Tune Hyper parameters")
+# logger.info(f"4.Tune Hyper parameters")
 # study = optuna.create_study(study_name="auc_objective", direction="maximize")
 # study.optimize(
 #     ROCAUCObjective(data_dict["xtrain"], data_dict["ytrain"]), n_trials=10, timeout=300
@@ -105,45 +105,73 @@ logger.info(f"4.Tune Hyper parameters")
 # for key, value in trial.params.items():
 #     print("    {}: {}".format(key, value))
 
-# model_params = trial.params
-model_params = {
-    "n_estimators": 50,
-    "learning_rate": 0.11,
-    "num_leaves": 198,
-    "feature_fraction": 0.85,
-}
+model_params = {'n_estimators': 120, 'num_leaves': 61, 'feature_fraction': 0.6311115701185432}
+
+#model_params = trial.params
+
 
 # =================== Train Model =========================================
 logger.info(f"5.Train Model ")
 logger.info(f"Creating model with params : {model_params}")
 mono_lgb = lgb.LGBMClassifier(**model_params)
-mono_model = show_model_results(data=data_dict, model=mono_lgb, calc_threshold=False)
+mono_model = show_model_results(data=data_dict, model=mono_lgb)
 
 # ===================Interpret Model =========================================
-logger.info(f"6.Interpret Model")
+# logger.info(f"6.Interpret Model")
 
-# Train ShapModelInterpreter
-shap_interpreter = ShapModelInterpreter(mono_model)
-feature_importance = shap_interpreter.fit_compute(
-    data_dict["xtrain"], data_dict["xtest"], data_dict["ytrain"], data_dict["ytest"]
-)
+# ## Train ShapModelInterpreter
+# shap_interpreter = ShapModelInterpreter(mono_model)
+# feature_importance = shap_interpreter.fit_compute(
+#     data_dict["xtrain"], data_dict["xtest"], data_dict["ytrain"], data_dict["ytest"]
+# )
 
-fig = plt.figure()
-ax1 = shap_interpreter.plot("importance", show=False)
-fig.suptitle("Feature Importance Plot", fontsize=12)
-fig.savefig(f"figures/{dataset_name}_feature_importance.png")
-plt.close(fig)
+# fig = plt.figure()
+# ax1 = shap_interpreter.plot("importance", show=False)
+# fig.suptitle("Feature Importance Plot", fontsize=12)
+# fig.savefig(f"figures/{dataset_name}_feature_importance.png")
+# plt.close(fig)
 
-fig = plt.figure()
-ax2 = shap_interpreter.plot("summary", show=False)
-fig.suptitle("Feature Summary Plot", fontsize=12)
-fig.savefig(f"figures/{dataset_name}_feature_summary.png")
-plt.close(fig)
+# fig = plt.figure()
+# ax2 = shap_interpreter.plot("summary", show=False)
+# fig.suptitle("Feature Summary Plot", fontsize=12)
+# fig.savefig(f"figures/{dataset_name}_feature_summary.png")
+# plt.close(fig)
 
-# Save the plots for comparision
-for feature in selected_features:
-    fig = plt.figure()
-    ax3 = shap_interpreter.plot("dependence", target_columns=[feature], show=False)
-    fig.suptitle(f"Dependence Plot : {feature}", fontsize=12)
-    fig.savefig(f"figures/{dataset_name}_shap_dependence_mono_{feature}.png")
-    plt.close(fig)
+# # Save the plots for comparision
+# for feature in selected_features:
+#     fig = plt.figure()
+#     ax3 = shap_interpreter.plot("dependence", target_columns=[feature], show=False)
+#     fig.suptitle(f"Dependence Plot : {feature}", fontsize=12)
+#     fig.savefig(f"figures/{dataset_name}_shap_dependence_mono_{feature}.png")
+#     plt.close(fig)
+
+# ===================================== Rule Fit =========================================
+# We see that LGBM model relies on a few features to predict the loan status.
+# Can we achive similar results by using the Rulefit model?
+
+logger.info(f"7.Rule Fit")
+
+import numpy as np
+import pandas as pd
+from rulefit import RuleFit
+from sklearn.ensemble import GradientBoostingRegressor
+
+
+features = selected_features
+rf_data_dict = {
+    "xtrain": data_dict["xtrain"].values,
+    "ytrain": data_dict["ytrain"].values,
+    "xtest": data_dict["xtest"].values,
+    "ytest": data_dict["ytest"].values,
+}
+
+
+#gb = GradientBoostingRegressor(n_estimators=100, max_depth=10, learning_rate=0.01)
+rf = RuleFit(max_iter=1000,n_jobs=6,rfmode="classify")
+# rf.fit(rf_data_dict['xtrain'], rf_data_dict['ytrain'], feature_names=features)
+rf_model = show_model_results(data=rf_data_dict, model=rf,feature_names=features, calc_rocauc=False)
+
+## Get the rules.
+rules = rf.get_rules()
+rules = rules[rules.coef != 0].sort_values("support", ascending=False)
+print(rules)
