@@ -17,6 +17,7 @@ from blog.data.lendingclub_dataset import LendingClubDataset
 from blog.model.sampling import oot_split
 from blog.model.regularisation import get_monotone_constraints
 from blog.model.feature_transformations import get_simple_feature_transformation
+from blog.model.optimise import getObjective, tune_model
 
 dataset_name = "lendingclub"
 target = "loan_status"
@@ -78,7 +79,8 @@ selected_features = [
     "emp_length",
     "addr_state",
     "revol_util",
-    "revol_bal","term",
+    "revol_bal",
+    "term",
     "num_actv_bc_tl",
     "title",
     "total_acc",
@@ -91,23 +93,21 @@ logger.info(f"Final features :  {selected_features}")
 data_dict["xtrain"] = data_dict["xtrain"][selected_features]
 data_dict["xtest"] = data_dict["xtest"][selected_features]
 
-# =================== Tune Hyper parameters =========================================
-# logger.info(f"4.Tune Hyper parameters")
-# study = optuna.create_study(study_name="auc_objective", direction="maximize")
-# study.optimize(
-#     ROCAUCObjective(data_dict["xtrain"], data_dict["ytrain"]), n_trials=10, timeout=300
-# )
-# logger.info("Number of finished trials: {}".format(len(study.trials)))
-# logger.info("Best trial:")
-# trial = study.best_trial
-# logger.info("  Value: {}".format(trial.value))
-# print("  Params: ")
-# for key, value in trial.params.items():
-#     print("    {}: {}".format(key, value))
-
-model_params = {'n_estimators': 120, 'num_leaves': 61, 'feature_fraction': 0.6311115701185432}
-
-#model_params = trial.params
+model_params = tune_model(data_dict["xtrain"], data_dict["ytrain"], "rocauc")
+model_params = {
+    "objective": "binary",
+    "metric": "binary_logloss",
+    "verbosity": -1,
+    "boosting_type": "gbdt",
+    "feature_pre_filter": False,
+    "lambda_l1": 0.2147440348264995,
+    "lambda_l2": 2.951088160975595e-07,
+    "num_leaves": 32,
+    "feature_fraction": 0.6,
+    "bagging_fraction": 0.6816921315176412,
+    "bagging_freq": 4,
+    "min_child_samples": 25,
+}
 
 
 # =================== Train Model =========================================
@@ -128,13 +128,13 @@ mono_model = show_model_results(data=data_dict, model=mono_lgb)
 # fig = plt.figure()
 # ax1 = shap_interpreter.plot("importance", show=False)
 # fig.suptitle("Feature Importance Plot", fontsize=12)
-# fig.savefig(f"figures/{dataset_name}_feature_importance.png")
+# fig.savefig(f"assets/figures/{dataset_name}_feature_importance.png")
 # plt.close(fig)
 
 # fig = plt.figure()
 # ax2 = shap_interpreter.plot("summary", show=False)
 # fig.suptitle("Feature Summary Plot", fontsize=12)
-# fig.savefig(f"figures/{dataset_name}_feature_summary.png")
+# fig.savefig(f"assets/figures/{dataset_name}_feature_summary.png")
 # plt.close(fig)
 
 # # Save the plots for comparision
@@ -142,36 +142,36 @@ mono_model = show_model_results(data=data_dict, model=mono_lgb)
 #     fig = plt.figure()
 #     ax3 = shap_interpreter.plot("dependence", target_columns=[feature], show=False)
 #     fig.suptitle(f"Dependence Plot : {feature}", fontsize=12)
-#     fig.savefig(f"figures/{dataset_name}_shap_dependence_mono_{feature}.png")
+#     fig.savefig(f"assets/figures/{dataset_name}_shap_dependence_mono_{feature}.png")
 #     plt.close(fig)
 
 # ===================================== Rule Fit =========================================
 # We see that LGBM model relies on a few features to predict the loan status.
 # Can we achive similar results by using the Rulefit model?
 
-logger.info(f"7.Rule Fit")
+# logger.info(f"7.Rule Fit")
 
-import numpy as np
-import pandas as pd
-from rulefit import RuleFit
-from sklearn.ensemble import GradientBoostingRegressor
-
-
-features = selected_features
-rf_data_dict = {
-    "xtrain": data_dict["xtrain"].values,
-    "ytrain": data_dict["ytrain"].values,
-    "xtest": data_dict["xtest"].values,
-    "ytest": data_dict["ytest"].values,
-}
+# import numpy as np
+# import pandas as pd
+# from rulefit import RuleFit
+# from sklearn.ensemble import GradientBoostingRegressor
 
 
-#gb = GradientBoostingRegressor(n_estimators=100, max_depth=10, learning_rate=0.01)
-rf = RuleFit(max_iter=1000,n_jobs=6,rfmode="classify")
-# rf.fit(rf_data_dict['xtrain'], rf_data_dict['ytrain'], feature_names=features)
-rf_model = show_model_results(data=rf_data_dict, model=rf,feature_names=features, calc_rocauc=False)
+# features = selected_features
+# rf_data_dict = {
+#     "xtrain": data_dict["xtrain"].values,
+#     "ytrain": data_dict["ytrain"].values,
+#     "xtest": data_dict["xtest"].values,
+#     "ytest": data_dict["ytest"].values,
+# }
 
-## Get the rules.
-rules = rf.get_rules()
-rules = rules[rules.coef != 0].sort_values("support", ascending=False)
-print(rules)
+
+# #gb = GradientBoostingRegressor(n_estimators=100, max_depth=10, learning_rate=0.01)
+# rf = RuleFit(max_iter=1000,n_jobs=6,rfmode="classify")
+# # rf.fit(rf_data_dict['xtrain'], rf_data_dict['ytrain'], feature_names=features)
+# rf_model = show_model_results(data=rf_data_dict, model=rf,feature_names=features, calc_rocauc=False)
+# ## Get the rules.
+# rules = rf.get_rules()
+# rules = rules[rules.coef != 0].sort_values("support", ascending=False)
+# ## Save the rules dataframe to markdown file.
+# rules.to_csv(f"assets/tables/{dataset_name}_rules.csv",index=False)

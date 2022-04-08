@@ -50,9 +50,8 @@ def get_simple_feature_transformation(data_dict):
         ]
     )
 
-    
-    columns =[*num_cols, *cat_cols]
-    
+    columns = [*num_cols, *cat_cols]
+
     logger.info(f"Transforming data...")
     data_dict["xtrain"] = preprocessor.fit_transform(
         data_dict["xtrain"], data_dict["ytrain"]

@@ -5,7 +5,10 @@ from sklearn.model_selection import cross_val_score
 import lightgbm as lgb
 import numpy as np
 from loguru import logger
-
+import optuna.integration.lightgbm as lgb
+from sklearn.model_selection import KFold,StratifiedKFold
+from lightgbm import early_stopping
+from lightgbm import log_evaluation
 
 class MultiObjective(object):
     """
@@ -107,3 +110,74 @@ class PRAUCObjective(object):
         )
 
         return np.round(average_precision_scores.mean(), 5)
+
+
+def getObjective(X, y, objective_type):
+    """
+    Return the objective function.
+
+    """
+    if objective_type == "multi":
+        return MultiObjective(X, y)
+    elif objective_type == "rocauc":
+        return ROCAUCObjective(X, y)
+    elif objective_type == "prauc":
+        return PRAUCObjective(X, y)
+    else:
+        raise ValueError("Unknown objective type")
+    
+def tune_model(X, y, objective, n_trials=100, n_jobs=-1, monotone_constraints=None):
+    """
+    Tune the model using Optuna.
+
+    Parameters
+    ----------
+    X : array-like, shape (n_samples, n_features)
+        The training input samples.
+    y : array-like, shape (n_samples,)
+        The target values.
+    objective : string
+        The objective function to be used.
+    n_trials : int, optional (default=100)
+        The number of trials to run.
+    n_jobs : int, optional (default=1)
+        The number of jobs to run in parallel.
+    monotone_constraints : list, optional (default=None)
+        The monotone constraints to be used.
+
+    Returns
+    -------
+    best_params : dict
+        The best parameters found.
+    best_score : float
+        The best score found.
+
+    """
+    
+    objective=getObjective(X, y, objective)
+
+    params = {
+        "objective": "binary",
+        "metric": "binary_logloss",
+        "verbosity": -1,
+        "boosting_type": "gbdt",
+    }
+    
+    dtrain = lgb.Dataset(X, label=y)
+    tuner = lgb.LightGBMTunerCV(
+        params,
+        dtrain,
+        folds=StratifiedKFold(n_splits=3),
+        callbacks=[early_stopping(100), log_evaluation(100)],
+    )
+
+    tuner.run()
+
+    print("Best score:", tuner.best_score)
+    best_params = tuner.best_params
+    print("Best params:", best_params)
+    print("  Params: ")
+    for key, value in best_params.items():
+        print("    {}: {}".format(key, value))
+    
+    return best_params
