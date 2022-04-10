@@ -26,13 +26,43 @@ target = "loan_status"
 path = "data/lc_2007_2017.csv"
 
 
-initial_features = ['verification_status', 'emp_title', 'int_rate', 'loan_amnt', 'total_rec_int',
-                    'total_acc', 'tot_cur_bal', 'fico_range_low', 'fico_range_high', 'grade',
-                    'total_rev_hi_lim', 'sub_grade', 'initial_list_status', 'purpose', 'issue_d', 
-                    'emp_length', 'pub_rec_bankruptcies', 'last_pymnt_amnt', 'num_actv_bc_tl', 'total_pymnt',
-                    'loan_status', 'term', 'home_ownership', 'revol_util', 'application_type', 'addr_state', 
-                    'inq_last_6mths', 'pub_rec', 'dti', 'mort_acc', 'revol_bal', 'title', 'annual_inc',
-                    'out_prncp', 'open_acc']
+initial_features = [
+    "verification_status",
+    "emp_title",
+    "int_rate",
+    "loan_amnt",
+    "total_rec_int",
+    "total_acc",
+    "tot_cur_bal",
+    "fico_range_low",
+    "fico_range_high",
+    "grade",
+    "total_rev_hi_lim",
+    "sub_grade",
+    "initial_list_status",
+    "purpose",
+    "issue_d",
+    "emp_length",
+    "pub_rec_bankruptcies",
+    "last_pymnt_amnt",
+    "num_actv_bc_tl",
+    "total_pymnt",
+    "loan_status",
+    "term",
+    "home_ownership",
+    "revol_util",
+    "application_type",
+    "addr_state",
+    "inq_last_6mths",
+    "pub_rec",
+    "dti",
+    "mort_acc",
+    "revol_bal",
+    "title",
+    "annual_inc",
+    "out_prncp",
+    "open_acc",
+]
 
 # combine two lists without duplicates
 initial_features = list(set(initial_features))
@@ -59,7 +89,7 @@ data_dict = get_simple_feature_transformation(data_dict)
 # =================== Feature Selection =========================================
 logger.info(f"3.Starting feature selection.")
 # Select the best features based on SHAPRFE CV
-#selected_features, fs_plot = select_features(data=data_dict, verbose=100)
+# selected_features, fs_plot = select_features(data=data_dict, verbose=100)
 
 selected_features = [
     "emp_length",
@@ -104,12 +134,14 @@ rf_data_dict = {
 }
 
 
-#gb = GradientBoostingRegressor(n_estimators=100, max_depth=10, learning_rate=0.01)
-rf = RuleFit(max_iter=1000,n_jobs=6,rfmode="classify")
+# gb = GradientBoostingRegressor(n_estimators=100, max_depth=10, learning_rate=0.01)
+rf = RuleFit(max_iter=1000, n_jobs=6, rfmode="classify")
 # rf.fit(rf_data_dict['xtrain'], rf_data_dict['ytrain'], feature_names=features)
-rf_model = show_model_results(data=rf_data_dict, model=rf,feature_names=features, calc_rocauc=False)
+rf_model = show_model_results(
+    data=rf_data_dict, model=rf, feature_names=features, calc_rocauc=False
+)
 ## Get the rules.
 rules = rf.get_rules()
 rules = rules[rules.coef != 0].sort_values("support", ascending=False)
 ## Save the rules dataframe to markdown file.
-rules.to_csv(f"assets/tables/{dataset_name}_rules.csv",index=False)
+rules.to_csv(f"assets/tables/{dataset_name}_rules.csv", index=False)

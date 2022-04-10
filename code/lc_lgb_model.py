@@ -24,13 +24,43 @@ target = "loan_status"
 path = "data/lc_2007_2017.csv"
 
 
-initial_features = ['verification_status', 'emp_title', 'int_rate', 'loan_amnt', 'total_rec_int',
-                    'total_acc', 'tot_cur_bal', 'fico_range_low', 'fico_range_high', 'grade',
-                    'total_rev_hi_lim', 'sub_grade', 'initial_list_status', 'purpose', 'issue_d', 
-                    'emp_length', 'pub_rec_bankruptcies', 'last_pymnt_amnt', 'num_actv_bc_tl', 'total_pymnt',
-                    'loan_status', 'term', 'home_ownership', 'revol_util', 'application_type', 'addr_state', 
-                    'inq_last_6mths', 'pub_rec', 'dti', 'mort_acc', 'revol_bal', 'title', 'annual_inc',
-                    'out_prncp', 'open_acc']
+initial_features = [
+    "verification_status",
+    "emp_title",
+    "int_rate",
+    "loan_amnt",
+    "total_rec_int",
+    "total_acc",
+    "tot_cur_bal",
+    "fico_range_low",
+    "fico_range_high",
+    "grade",
+    "total_rev_hi_lim",
+    "sub_grade",
+    "initial_list_status",
+    "purpose",
+    "issue_d",
+    "emp_length",
+    "pub_rec_bankruptcies",
+    "last_pymnt_amnt",
+    "num_actv_bc_tl",
+    "total_pymnt",
+    "loan_status",
+    "term",
+    "home_ownership",
+    "revol_util",
+    "application_type",
+    "addr_state",
+    "inq_last_6mths",
+    "pub_rec",
+    "dti",
+    "mort_acc",
+    "revol_bal",
+    "title",
+    "annual_inc",
+    "out_prncp",
+    "open_acc",
+]
 
 # combine two lists without duplicates
 initial_features = list(set(initial_features))
@@ -57,7 +87,7 @@ data_dict = get_simple_feature_transformation(data_dict)
 # =================== Feature Selection =========================================
 logger.info(f"3.Starting feature selection.")
 # Select the best features based on SHAPRFE CV
-#selected_features, fs_plot = select_features(data=data_dict, verbose=100)
+# selected_features, fs_plot = select_features(data=data_dict, verbose=100)
 
 selected_features = [
     "emp_length",
@@ -77,21 +107,23 @@ logger.info(f"Final features :  {selected_features}")
 data_dict["xtrain"] = data_dict["xtrain"][selected_features]
 data_dict["xtest"] = data_dict["xtest"][selected_features]
 
-model_params = tune_model(data_dict["xtrain"], data_dict["ytrain"], "rocauc")
-# model_params = {
-#     "objective": "binary",
-#     "metric": "binary_logloss",
-#     "verbosity": -1,
-#     "boosting_type": "gbdt",
-#     "feature_pre_filter": False,
-#     "lambda_l1": 0.2147440348264995,
-#     "lambda_l2": 2.951088160975595e-07,
-#     "num_leaves": 32,
-#     "feature_fraction": 0.6,
-#     "bagging_fraction": 0.6816921315176412,
-#     "bagging_freq": 4,
-#     "min_child_samples": 25,
-# }
+
+# model_params = tune_model(data_dict["xtrain"], data_dict["ytrain"], "rocauc")
+
+model_params = {
+    "objective": "binary",
+    "metric": "binary_logloss",
+    "verbosity": -1,
+    "boosting_type": "gbdt",
+    "feature_pre_filter": False,
+    "lambda_l1": 3.221919143923753e-08,
+    "lambda_l2": 0.0016740960905730054,
+    "num_leaves": 66,
+    "feature_fraction": 0.6,
+    "bagging_fraction": 1.0,
+    "bagging_freq": 0,
+    "min_child_samples": 20,
+}
 
 
 # =================== Train Model =========================================
@@ -128,5 +160,3 @@ for feature in selected_features:
     fig.suptitle(f"Dependence Plot : {feature}", fontsize=12)
     fig.savefig(f"assets/figures/{dataset_name}_shap_dependence_mono_{feature}.png")
     plt.close(fig)
-
-
