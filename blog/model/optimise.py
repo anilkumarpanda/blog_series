@@ -126,6 +126,8 @@ def getObjective(X, y, objective_type):
     else:
         raise ValueError("Unknown objective type")
     
+    
+    
 def tune_model(X, y, objective, n_trials=100, n_jobs=-1, monotone_constraints=None):
     """
     Tune the model using Optuna.
@@ -149,12 +151,10 @@ def tune_model(X, y, objective, n_trials=100, n_jobs=-1, monotone_constraints=No
     -------
     best_params : dict
         The best parameters found.
-    best_score : float
-        The best score found.
 
     """
     
-    objective=getObjective(X, y, objective)
+    objective = getObjective(X, y, objective)
 
     params = {
         "objective": "binary",

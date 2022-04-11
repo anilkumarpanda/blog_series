@@ -100,6 +100,8 @@ class LendingClubDataset:
         cat_cols, num_cols = split_cols_by_type(X)
 
         for col in cat_cols:
+            # convert to lower case
+            X[col] = X[col].str.lower()
             X[col] = X[col].fillna("missing")
             X[col] = X[col].astype("category")
 

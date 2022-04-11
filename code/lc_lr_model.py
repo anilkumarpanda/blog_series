@@ -1,27 +1,40 @@
+# Code to create a skorecard model.
+# This also to test the latest version of the package.
+
+
 """
 Code for simple model training and evaluation using LGBM.
 """
 
 import pandas as pd
+from blog.utils.df_utils import split_cols_by_type
 from loguru import logger
 from sklearn.model_selection import train_test_split
-import lightgbm as lgb
-import optuna
 import matplotlib.pyplot as plt
 from blog.data.data_cleaner_factory import DataCleanerFactory
 from blog.model.regularisation import select_features, get_monotone_constraints
 from blog.model.optimise import ROCAUCObjective, MultiObjective, PRAUCObjective
 from blog.model.evaluation import show_model_results
-from probatus.interpret import ShapModelInterpreter
 from blog.data.lendingclub_dataset import LendingClubDataset
 from blog.model.sampling import oot_split
 from blog.model.regularisation import get_monotone_constraints
 from blog.model.feature_transformations import get_simple_feature_transformation
 from blog.model.optimise import getObjective, tune_model
+from skorecard.bucketers import DecisionTreeBucketer, OrdinalCategoricalBucketer, OptimalBucketer
+from skorecard.pipeline import BucketingProcess
+from sklearn.pipeline import make_pipeline
+from skorecard import Skorecard
+
+from sklearn.compose import ColumnTransformer
+from sklearn.datasets import fetch_openml
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
 
 dataset_name = "lendingclub"
 target = "loan_status"
-path = "data/lc_2007_2017.csv"
+path = "data/lc_2007_2017_selected.csv"
 
 
 initial_features = [
@@ -79,11 +92,11 @@ X_it, y_it, X_oot, y_oot = oot_split(
     df=data, split_date="Jun-2016", split_col="issue_d", target_col=target
 )
 # Original data dictionary
-data_dict_org = {"xtrain": X_it, "ytrain": y_it, "xtest": X_oot, "ytest": y_oot}
+data_dict= {"xtrain": X_it, "ytrain": y_it, "xtest": X_oot, "ytest": y_oot}
 
 # =================== Apply feature transformation =========================================
 logger.info(f"2.Transform features")
-data_dict = get_simple_feature_transformation(data_dict_org)
+#data_dict = get_simple_feature_transformation(data_dict_org)
 
 # =================== Feature Selection =========================================
 logger.info(f"3.Starting feature selection.")
@@ -102,62 +115,37 @@ selected_features = [
     "application_type",
     "purpose",
     "sub_grade",
+    "dti"
 ]
 logger.info(f"Final features :  {selected_features}")
 # Update the data dictionary with the selected features.
 data_dict["xtrain"] = data_dict["xtrain"][selected_features]
 data_dict["xtest"] = data_dict["xtest"][selected_features]
 
+# Convert string columns to categorical.
+cat_cols, num_cols = split_cols_by_type(data_dict["xtrain"])
 
-# model_params = tune_model(data_dict["xtrain"], data_dict["ytrain"], "rocauc")
+numeric_transformer = Pipeline(
+    steps=[("scaler", StandardScaler())]
+)
+categorical_transformer = OneHotEncoder(handle_unknown="ignore")
 
-model_params = {
-    "objective": "binary",
-    "metric": "binary_logloss",
-    "verbosity": -1,
-    "boosting_type": "gbdt",
-    "feature_pre_filter": False,
-    "lambda_l1": 3.221919143923753e-08,
-    "lambda_l2": 0.0016740960905730054,
-    "num_leaves": 66,
-    "feature_fraction": 0.6,
-    "bagging_fraction": 1.0,
-    "bagging_freq": 0,
-    "min_child_samples": 20,
-}
-
-
-# =================== Train Model =========================================
-logger.info(f"5.Train Model ")
-logger.info(f"Creating model with params : {model_params}")
-mono_lgb = lgb.LGBMClassifier(**model_params)
-mono_model = show_model_results(data=data_dict, model=mono_lgb)
-
-### ===================Interpret Model =========================================
-logger.info(f"6.Interpret Model")
-
-## Train ShapModelInterpreter
-shap_interpreter = ShapModelInterpreter(mono_model)
-feature_importance = shap_interpreter.fit_compute(
-    data_dict["xtrain"], data_dict["xtest"], data_dict["ytrain"], data_dict["ytest"]
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", numeric_transformer, num_cols),
+        ("cat", categorical_transformer, cat_cols),
+    ]
 )
 
-fig = plt.figure()
-ax1 = shap_interpreter.plot("importance", show=False)
-fig.suptitle("Feature Importance Plot", fontsize=12)
-fig.savefig(f"assets/figures/{dataset_name}_feature_importance.png")
-plt.close(fig)
+# Append classifier to preprocessing pipeline.
+# Now we have a full prediction pipeline.
+clf = Pipeline(
+    steps=[("preprocessor", preprocessor), ("classifier", LogisticRegression(max_iter=5000))]
+)
 
-fig = plt.figure()
-ax2 = shap_interpreter.plot("summary", show=False)
-fig.suptitle("Feature Summary Plot", fontsize=12)
-fig.savefig(f"assets/figures/{dataset_name}_feature_summary.png")
-plt.close(fig)
+logger.info(f"6.Calculate LR")
+scorecard = show_model_results(
+    data=data_dict, model=clf, calc_rocauc=True
+)
 
-# Save the plots for comparision
-for feature in selected_features:
-    fig = plt.figure()
-    ax3 = shap_interpreter.plot("dependence", target_columns=[feature], show=False)
-    fig.suptitle(f"Dependence Plot : {feature}", fontsize=12)
-    fig.savefig(f"assets/figures/{dataset_name}_shap_dependence_mono_{feature}.png")
-    plt.close(fig)
+

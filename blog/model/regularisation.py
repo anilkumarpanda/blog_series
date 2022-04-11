@@ -2,14 +2,11 @@
 Code for model regularisation.
 """
 
-# Code to tune the models
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import roc_auc_score, accuracy_score
 from xgboost import XGBClassifier
 from probatus.feature_elimination import EarlyStoppingShapRFECV
-from yellowbrick.classifier import DiscriminationThreshold
 import matplotlib
-
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -18,7 +15,7 @@ from loguru import logger
 import lightgbm as lgb
 
 
-def select_features(data, n_features, verbose=1):
+def select_features(data, n_features=None, verbose=1):
     """
     Method for feature selection.
     Args:
