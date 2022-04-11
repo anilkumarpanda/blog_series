@@ -3,8 +3,6 @@ Code for model regularisation.
 """
 
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import roc_auc_score, accuracy_score
-from xgboost import XGBClassifier
 from probatus.feature_elimination import EarlyStoppingShapRFECV
 import matplotlib
 matplotlib.use("TkAgg")
@@ -13,7 +11,6 @@ import pandas as pd
 import numpy as np
 from loguru import logger
 import lightgbm as lgb
-
 
 def select_features(data, n_features=None, verbose=1):
     """

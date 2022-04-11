@@ -7,11 +7,14 @@ from sklearn.metrics import (
     average_precision_score,
     balanced_accuracy_score,
 )
+import pandas as pd
 import numpy as np
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.model_selection import cross_val_score
 from blog.utils.utils import get_key
 from loguru import logger
+import seaborn as sns
+import matplotlib.pylab as plt
 
 def show_model_results(data, model, feature_names=None, calc_rocauc=True):
     """
@@ -23,11 +26,14 @@ def show_model_results(data, model, feature_names=None, calc_rocauc=True):
     Returns :
         model(xgboost.XGBClassifier) : Return the trained model.
     """
-    # Add cross validation.
-    # roc_auc = cross_val_score(
-    #         model, data["xtrain"], data["ytrain"], cv=3, scoring="roc_auc"
-    #     )
-    # print(f'Cross Validation ROC AUC Score : {roc_auc.mean()}')
+    
+    if calc_rocauc:
+        #Add cross validation.
+        roc_auc = cross_val_score(
+                model, data["xtrain"], data["ytrain"], cv=3, scoring="roc_auc"
+            )
+        print(f'Cross Validation ROC AUC Score : {roc_auc.mean()}')
+    
     # Add feature names is not none.
     # Add other metrics as required.
 
@@ -38,6 +44,13 @@ def show_model_results(data, model, feature_names=None, calc_rocauc=True):
 
     # Show the model results.
     if calc_rocauc:
+        # Add cross validation.
+        # roc_auc = cross_val_score(
+        #         model, data["xtrain"], data["ytrain"], cv=3, scoring="roc_auc"
+        #     )
+        # print(f'Cross Validation ROC AUC Score : {roc_auc.mean()}')
+        # Add feature names is not none.
+        # Add other metrics as required.
         y_train_proba = model.predict_proba(data["xtrain"])[:, 1]
         y_test_proba = model.predict_proba(data["xtest"])[:, 1]
         print(f"Train ROC-AUC score : {roc_auc_score(data['ytrain'],y_train_proba)}")
@@ -82,19 +95,27 @@ def get_segment_rocauc(columns, model, data_dict):
     """
     # Calculate the predictions.
     pred_proba = model.predict_proba(data_dict["xtest"])[:,1]
-    data_dict['xtest']['pred_proba'] = pred_proba
-    data_dict['xtest']['target'] = data_dict['ytest']
+    xtest = data_dict["xtest"].copy()
+    
+    xtest['pred_proba'] = pred_proba
+    xtest['target'] = data_dict['ytest']
     
     #For each column in column list
     for col in columns :
-        print(f"\n : Creating segment wise ROC for : {col}")
+        print(f"\nCreating segment wise ROC for : {col}")
         #Get the list of unique values in the column
-        unique_vals = data_dict['xtest'][col].unique()
+        unique_vals = xtest[col].unique()
+        roc_auc_dict= {}
         for val in unique_vals:
-            y_test_segment = data_dict['xtest'][data_dict['xtest'][col] == val]['target']
-            y_proba_segment = data_dict['xtest'][data_dict['xtest'][col] == val]['pred_proba']
+            y_test_segment = xtest[xtest[col] == val]['target']
+            y_proba_segment = xtest[xtest[col] == val]['pred_proba']
             roc_auc_score_segment = roc_auc_score(y_test_segment, y_proba_segment)
-            logger.info(f"ROC-AUC score for {col}=={val} = {roc_auc_score_segment}")
-    
+            roc_auc_dict[val] = roc_auc_score_segment
+        #Convert the dictionary to dataframe
+        seg_roc_auc_df = pd.DataFrame.from_dict(roc_auc_dict,columns=['roc-auc'],orient='index')
+        # Create a sns bar plot with angled labels at 45 degrees
+        sns.barplot(x=seg_roc_auc_df.index, y=seg_roc_auc_df['roc-auc'])
+        plt.xticks(rotation=45)
+        plt.show()
             
     
