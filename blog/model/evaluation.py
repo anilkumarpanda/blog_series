@@ -115,7 +115,7 @@ def get_segment_rocauc(columns, model, data_dict):
         seg_roc_auc_df = pd.DataFrame.from_dict(roc_auc_dict,columns=['roc-auc'],orient='index')
         # Create a sns bar plot with angled labels at 45 degrees
         sns.barplot(x=seg_roc_auc_df.index, y=seg_roc_auc_df['roc-auc'])
-        plt.xticks(rotation=45)
+        plt.xticks(rotation=70)
         plt.show()
             
     
