@@ -60,6 +60,11 @@ initial_features = [
     "annual_inc",
     "out_prncp",
     "open_acc",
+    "installment",
+    "home_ownership",
+    "avg_cur_bal",
+    "annual_inc",
+    "num_tl_90g_dpd_24m"
 ]
 
 # combine two lists without duplicates
@@ -97,12 +102,16 @@ selected_features = [
     "revol_bal",
     "term",
     "num_actv_bc_tl",
-    "title",
     "total_acc",
     "application_type",
     "purpose",
-    "sub_grade",
+    "grade",
+    'dti',
+    "home_ownership",
+    "annual_inc",
+    "num_tl_90g_dpd_24m"
 ]
+
 logger.info(f"Final features :  {selected_features}")
 # Update the data dictionary with the selected features.
 data_dict["xtrain"] = data_dict["xtrain"][selected_features]

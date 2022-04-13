@@ -27,7 +27,7 @@ def plot_pr_auc(model,data_dict):
     lr_precision, lr_recall, _ = precision_recall_curve(data_dict['ytest'], lr_probs)
     lr_f1, lr_auc = f1_score(data_dict['ytest'], yhat), auc(lr_recall, lr_precision)
     # summarize scores
-    print('Logistic: f1=%.3f auc=%.3f' % (lr_f1, lr_auc))
+    print(f'{model.__class__.__name__}: f1=%.3f auc=%.3f' % (lr_f1, lr_auc))
     # plot the precision-recall curves
     no_skill = len(data_dict['ytest'][data_dict['ytest']==1]) / len(data_dict['ytest'])
     pyplot.plot([0, 1], [no_skill, no_skill], linestyle='--', label='No Skill')

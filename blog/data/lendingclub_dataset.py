@@ -38,6 +38,7 @@ class LendingClubDataset:
         # Remove verh high vlaues for annual income and current balance
         self.df = self.df[self.df["annual_inc"] <= 250000]
         self.df = self.df[self.df["tot_cur_bal"] < 1000001]
+        self.df = self.df[self.df["revol_bal"] <= 600000]
 
         # Create features related of the FICO scores.
         self.df = self.df[self.df["pub_rec"] < 3]
@@ -46,7 +47,7 @@ class LendingClubDataset:
             self.df["fico_range_high"] + self.df["fico_range_low"]
         ) / 2
 
-        self.df = self.df.drop(["fico_range_high", "fico_range_low"], axis=1)
+        # self.df = self.df.drop(["fico_range_high", "fico_range_low"], axis=1)
         # Map employment length to number of years.
 
         self.df["emp_length"] = self.df["emp_length"].map(
