@@ -60,7 +60,7 @@ def show_model_results(data, model, feature_names=None, calc_rocauc=True, **kwar
             f"Test PR AUC socre : {average_precision_score(data['ytest'],y_test_proba)}"
         )
         
-        theshold_list = np.arange(0.01, 0.99, 0.1)
+        theshold_list = np.arange(0.01, 0.99, 0.10)
         proba_dict = {}
         # convert probabilities to prediction based on threshold
         for threshold in theshold_list:
@@ -73,7 +73,7 @@ def show_model_results(data, model, feature_names=None, calc_rocauc=True, **kwar
         # Find key for a value in dictionary
         threshold = get_key(proba_dict, max_accuracy)
         print(
-            f"Best balanced accouracy of {max_accuracy} obtained at threshold {threshold} "
+            f"Best balanced accuracy of {np.round(max_accuracy,3)} obtained at threshold {np.round(threshold,3)} "
         )
 
     else :
