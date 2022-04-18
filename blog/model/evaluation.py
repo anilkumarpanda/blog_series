@@ -16,13 +16,14 @@ from loguru import logger
 import seaborn as sns
 import matplotlib.pylab as plt
 
-def show_model_results(data, model, feature_names=None, calc_rocauc=True):
+def show_model_results(data, model, feature_names=None, calc_rocauc=True, **kwargs):
     """
     Show the model results.
     Args :
         data(dict) : Dictionary containing the training and testing data.
         model(xgboost.XGBClassifier) : Model used to train and evaluate data.
         metrics(dict): Metrics used to evaluate the model.Default is roc_auc.
+
     Returns :
         model(xgboost.XGBClassifier) : Return the trained model.
     """
@@ -40,7 +41,7 @@ def show_model_results(data, model, feature_names=None, calc_rocauc=True):
     if feature_names is not None:
         model.fit(data["xtrain"], data["ytrain"], feature_names=feature_names)
     else:
-        model.fit(data["xtrain"], data["ytrain"])
+        model.fit(data["xtrain"], data["ytrain"], **kwargs)
 
     # Show the model results.
     if calc_rocauc:
