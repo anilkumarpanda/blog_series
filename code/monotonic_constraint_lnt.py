@@ -15,6 +15,7 @@ from blog.model.regularisation import select_features, get_monotone_constraints
 from blog.model.optimise import ROCAUCObjective
 from blog.model.evaluation import show_model_results
 from probatus.interpret import ShapModelInterpreter
+from blog.model.feature_transformations import get_simple_feature_transformation,create_bunch_feats
 
 dataset_name = "lnt"
 target = "loan_default"
@@ -27,9 +28,14 @@ logger.info(f"Train shape : {X_train.shape} , {y_train.shape}")
 logger.info(f"Test shape : {X_test.shape},{y_test.shape} ")
 
 data_dict = {"xtrain": X_train, "ytrain": y_train, "xtest": X_test, "ytest": y_test}
+
+# Engineer features based on bunch 
+logger.info(f"Transform features")
+data_dict = create_bunch_feats(data_dict=data_dict)
+
 logger.info("Selecting features")
 # Select the best features based on SHAPRFE CV
-# selected_features,fs_plot = select_features(data=data_dict,n_features=12,verbose=1)
+selected_features,fs_plot = select_features(data=data_dict,verbose=1)
 
 selected_features = [
     "VoterID_flag",

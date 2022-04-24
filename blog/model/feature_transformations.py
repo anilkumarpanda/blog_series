@@ -1,4 +1,5 @@
 # Code for simple feature transformations
+from itertools import groupby
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.preprocessing import FunctionTransformer
@@ -63,3 +64,45 @@ def get_simple_feature_transformation(data_dict):
     data_dict["xtest"] = pd.DataFrame(data_dict["xtest"], columns=columns)
 
     return data_dict
+
+
+def create_bunch_feats(data_dict):
+    """
+    Simple feature engineering method that includes creation of features
+    of the type
+    feature_1 = groupby(feat_x)[feat_y].mean()
+    feature_2 = feat_y-groupyby(feat_x)[feat_y].mean()
+
+    Easiest implementation is if feat_x is categorical and feat_y is numerical.
+
+    """
+
+    # Split cols by type
+    cat_cols, num_cols = split_cols_by_type(data_dict["xtrain"])
+    logger.info(f"Length of cat_cols: {len(cat_cols)}")
+    logger.info(f"Length of num_cols: {len(num_cols)}")
+
+    # Create a bunch of features
+
+    for cat_col in cat_cols:
+        for num_col in num_cols:
+            logger.info(f"Creating feature {cat_col}_{num_col}")
+            data_dict["xtrain"][f"{cat_col}_{num_col}_mean"] = data_dict["xtrain"].groupby(cat_col)[num_col].mean()
+            data_dict["xtest"][f"{cat_col}_{num_col}_mean"] = data_dict["xtest"].groupby(cat_col)[num_col].mean()
+
+            data_dict["xtrain"][f"{cat_col}_{num_col}_std"] = data_dict["xtrain"].groupby(cat_col)[num_col].std()
+            data_dict["xtest"][f"{cat_col}_{num_col}_std"] = data_dict["xtest"].groupby(cat_col)[num_col].std()
+
+            data_dict["xtrain"][f"{cat_col}_{num_col}_skew"] = data_dict["xtrain"].groupby(cat_col)[num_col].skew()
+            data_dict["xtest"][f"{cat_col}_{num_col}_skew"] = data_dict["xtest"].groupby(cat_col)[num_col].skew()
+
+            # Difference with the actual value
+
+            data_dict["xtrain"][f"{cat_col}_{num_col}_mean"] = (
+                data_dict["xtrain"][num_col]-data_dict["xtrain"].groupby(cat_col)[num_col].mean()
+                )
+            data_dict["xtest"][f"{cat_col}_{num_col}_mean"] = (
+                data_dict["xtest"][num_col]- data_dict["xtest"].groupby(cat_col)[num_col].mean()
+                )
+
+    return data_dict     

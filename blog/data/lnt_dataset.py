@@ -123,24 +123,6 @@ class LnTDataset:
             inplace=True,
         )
 
-        risk_map = {
-            "No Bureau History Available": -1,
-            "Not Scored: No Activity seen on the customer (Inactive)": -1,
-            "Not Scored: Sufficient History Not Available": -1,
-            "Not Scored: No Updates available in last 36 months": -1,
-            "Not Scored: Only a Guarantor": -1,
-            "Not Scored: More than 50 active Accounts found": -1,
-            "Not Scored: Not Enough Info available on the customer": -1,
-            "Very Low Risk": 4,
-            "Low Risk": 3,
-            "Medium Risk": 2,
-            "High Risk": 1,
-            "Very High Risk": 0,
-        }
-
-        self.df["PERFORM_CNS.SCORE.DESCRIPTION"] = self.df[
-            "PERFORM_CNS.SCORE.DESCRIPTION"
-        ].map(risk_map)
 
     def _map_employment(self):
         """
